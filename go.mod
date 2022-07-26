@@ -1,4 +1,4 @@
-module github.com/jaztec/gorm-repository
+module github.com/jaztec/repository
 
 go 1.18
 
