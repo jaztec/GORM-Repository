@@ -1,6 +1,13 @@
 package repository
 
 type Condition struct {
-	Query any
+	Query string
 	Args  []any
+}
+
+func NewCondition(q string, a ...any) Condition {
+	return Condition{
+		q,
+		a,
+	}
 }
