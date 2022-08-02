@@ -38,7 +38,7 @@ func TestNewCondition(t *testing.T) {
 			}
 			for i, _ := range ut.a {
 				if c.Args()[i] != ut.a[i] {
-					t.Error("Arguments at position do not match", i, ut.a[i], c.Args()[i])
+					t.Errorf("Arguments at position %d do not match, expected %v but got %v", i, ut.a[i], c.Args()[i])
 				}
 			}
 		}
