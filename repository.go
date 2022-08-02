@@ -48,7 +48,12 @@ func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditi
 		Order("created_at ASC")
 
 	for _, c := range conditions {
-		tx = tx.Where(c.Query, c.Args...)
+		switch c.Type() {
+		case TypeWhere:
+			tx = tx.Where(c.Query(), c.Args()...)
+		case TypeJoin:
+			tx = tx.Joins(c.Query(), c.Args()...)
+		}
 	}
 
 	tx.Find(&ts)
