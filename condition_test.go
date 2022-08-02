@@ -24,7 +24,7 @@ func TestNewCondition(t *testing.T) {
 			case repository.TypeJoin:
 				c = repository.NewJoinCondition(ut.q, ut.a)
 			default:
-				t.Fatal("No valid type provided")
+				t.Fatalf("No valid type provided (%d)", ut.t)
 			}
 
 			if c.Type() != ut.t {
