@@ -41,7 +41,7 @@ func NewWhereCondition(q string, a ...any) Condition {
 
 func NewJoinCondition(q string, a ...any) Condition {
 	return condition{
-		t: TypeWhere,
+		t: TypeJoin,
 		q: q,
 		a: a,
 	}

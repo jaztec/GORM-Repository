@@ -20,9 +20,9 @@ func TestNewCondition(t *testing.T) {
 			var c repository.Condition
 			switch ut.t {
 			case repository.TypeWhere:
-				c = repository.NewWhereCondition(ut.q, ut.a)
+				c = repository.NewWhereCondition(ut.q, ut.a...)
 			case repository.TypeJoin:
-				c = repository.NewJoinCondition(ut.q, ut.a)
+				c = repository.NewJoinCondition(ut.q, ut.a...)
 			default:
 				t.Fatalf("No valid type provided (%d)", ut.t)
 			}
@@ -38,7 +38,7 @@ func TestNewCondition(t *testing.T) {
 			}
 			for i, _ := range ut.a {
 				if c.Args()[i] != ut.a[i] {
-					t.Errorf("Arguments at position %d do not match, expected %v but got %v", i, ut.a[i], c.Args()[i])
+					t.Errorf("Arguments at position %d do not match, expected %+v but got %+v", i, ut.a[i], c.Args()[i])
 				}
 			}
 		}
