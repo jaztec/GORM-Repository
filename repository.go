@@ -40,12 +40,17 @@ func (r *Repository[T]) Create(ctx context.Context, e *T) (*T, error) {
 	return e, tr.Error
 }
 
-func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int) ([]T, error) {
+func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditions ...Condition) ([]T, error) {
 	var ts []T
 	tx := r.DB(ctx).
 		Limit(pageSize).
 		Offset(after).
 		Order("created_at ASC")
+
+	for _, c := range conditions {
+		tx = tx.Where(c.Query, c.Args...)
+	}
+
 	tx.Find(&ts)
 
 	if err := tx.Error; err != nil {
