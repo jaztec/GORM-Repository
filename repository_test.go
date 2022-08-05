@@ -37,6 +37,36 @@ func TestCRUDCommands(t *testing.T) {
 			t.Errorf("Name does not comply: %s", ne.Name)
 		}
 	})
+
+	t.Run("Find one", func(t *testing.T) {
+		var err error
+		models := []testModel{
+			{Name: "Test"},
+			{Name: "Test2"},
+		}
+
+		for _, n := range models {
+			_, err = r.Create(context.Background(), &n)
+			if err != nil {
+				t.Fatalf("Error creating one: %+v", err)
+			}
+		}
+
+		m, err := r.FindBy(context.Background(), 1, 1, repository.NewWhereCondition("name = ?", "Test"))
+		if err != nil {
+			t.Fatalf("Error finding one: %+v", err)
+		}
+		if len(m) != 1 {
+			t.Errorf("Invalid number of records returned, expect %d but received %d", 1, len(m))
+		}
+		ne := m[0]
+		if ne.ID == "" {
+			t.Errorf("No ID was filled")
+		}
+		if ne.Name != "Test" {
+			t.Errorf("Name does not comply: %s", ne.Name)
+		}
+	})
 }
 
 func getDb(t *testing.T) *gorm.DB {
