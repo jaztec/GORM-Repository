@@ -6,6 +6,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"testing"
+	"time"
 )
 
 type testModel struct {
@@ -30,7 +31,7 @@ func TestCRUDCommands(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error creating one: %+v", err)
 		}
-		if ne.ID == "" {
+		if ne.GetID() == "" {
 			t.Errorf("No ID was filled")
 		}
 		if ne.Name != "Test" {
@@ -60,13 +61,31 @@ func TestCRUDCommands(t *testing.T) {
 			t.Errorf("Invalid number of records returned, expect %d but received %d", 1, len(m))
 		}
 		ne := m[0]
-		if ne.ID == "" {
-			t.Errorf("No ID was filled")
-		}
-		if ne.Name != "Test" {
-			t.Errorf("Name does not comply: %s", ne.Name)
-		}
+		testModelParts(t, ne, false)
 	})
+}
+
+func testModelParts(t *testing.T, m testModel, withDeleted bool) {
+	if m.GetID() == "" {
+		t.Errorf("No ID was filled")
+	}
+	if m.GetCreatedAt().Equal(time.Time{}) {
+		t.Errorf("Incorrect create time")
+	}
+	if m.GetUpdatedAt().Equal(time.Time{}) || !m.GetUpdatedAt().Equal(m.GetCreatedAt()) {
+		t.Errorf("Incorrect update time")
+	}
+	if m.GetDeletedAt() == nil && withDeleted {
+		t.Errorf("Incorrect delete time")
+	} else if m.GetDeletedAt() != nil && !withDeleted {
+		t.Errorf("Incorrect delete time")
+	}
+	if m.GetID() == "" {
+		t.Errorf("No ID was filled")
+	}
+	if m.Name != "Test" {
+		t.Errorf("Name does not comply: %s", m.Name)
+	}
 }
 
 func getDb(t *testing.T) *gorm.DB {
