@@ -70,9 +70,9 @@ func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditi
 	return ts, nil
 }
 
-func (r *Repository[T]) Model() []T {
+func (r *Repository[T]) Model() []Interface {
 	var e T
-	return []T{e}
+	return []Interface{e}
 }
 
 func (r *Repository[T]) DB(ctx context.Context) *gorm.DB {
