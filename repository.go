@@ -40,6 +40,11 @@ func (r *Repository[T]) Create(ctx context.Context, e *T) (*T, error) {
 	return e, tr.Error
 }
 
+func (r *Repository[T]) Update(ctx context.Context, e *T) (*T, error) {
+	tr := r.DB(ctx).Save(e)
+	return e, tr.Error
+}
+
 func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditions ...Condition) ([]T, error) {
 	var ts []T
 	tx := r.DB(ctx).
@@ -65,9 +70,9 @@ func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditi
 	return ts, nil
 }
 
-func (r *Repository[T]) Model() T {
+func (r *Repository[T]) Model() []T {
 	var e T
-	return e
+	return []T{e}
 }
 
 func (r *Repository[T]) DB(ctx context.Context) *gorm.DB {
