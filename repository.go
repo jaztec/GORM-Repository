@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type DBProvider interface {
@@ -96,7 +95,6 @@ func (r *Repository[T]) ClearPreloads() *Repository[T] {
 }
 
 func (r *Repository[T]) addPreloads(tx *gorm.DB) *gorm.DB {
-	tx.Preload(clause.Associations)
 	for p, args := range r.preloads {
 		tx.Preload(p, args)
 	}
