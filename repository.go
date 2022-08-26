@@ -15,22 +15,21 @@ type Migrator interface {
 }
 
 type Repository[T Interface] struct {
-	db *gorm.DB
+	db       *gorm.DB
+	preloads map[string][]any
 }
 
 func (r *Repository[T]) GetByID(ctx context.Context, id string) (T, error) {
 	var e T
-	result := r.DB(ctx).
-		Preload(clause.Associations).
+	tx := r.addPreloads(r.DB(ctx)).
 		Where("id = ?", id).
 		First(&e)
-	return e, result.Error
+	return e, tx.Error
 }
 
 func (r *Repository[T]) FindAll(ctx context.Context) ([]T, error) {
 	var e []T
-	tr := r.DB(ctx).
-		Preload(clause.Associations).
+	tr := r.addPreloads(r.DB(ctx)).
 		Find(&e)
 	return e, tr.Error
 }
@@ -51,6 +50,8 @@ func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditi
 		Limit(pageSize).
 		Offset(after).
 		Order("created_at ASC")
+
+	tx = r.addPreloads(tx)
 
 	for _, c := range conditions {
 		switch c.Type() {
@@ -77,6 +78,29 @@ func (r *Repository[T]) Model() []Interface {
 
 func (r *Repository[T]) DB(ctx context.Context) *gorm.DB {
 	return r.db.WithContext(ctx)
+}
+
+func (r *Repository[T]) AddPreload(preload string, args []any) *Repository[T] {
+	if r.preloads == nil {
+		r.preloads = make(map[string][]any, 5)
+	}
+	r.preloads[preload] = args
+
+	return r
+}
+
+func (r *Repository[T]) ClearPreloads() *Repository[T] {
+	r.preloads = nil
+
+	return r
+}
+
+func (r *Repository[T]) addPreloads(tx *gorm.DB) *gorm.DB {
+	tx.Preload(clause.Associations)
+	for p, args := range r.preloads {
+		tx.Preload(p, args)
+	}
+	return tx
 }
 
 func NewRepository[T Interface](db *gorm.DB) (Repository[T], error) {
