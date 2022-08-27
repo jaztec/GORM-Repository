@@ -96,7 +96,7 @@ func (r *Repository[T]) ClearPreloads() *Repository[T] {
 
 func (r *Repository[T]) addPreloads(tx *gorm.DB) *gorm.DB {
 	for p, args := range r.preloads {
-		tx.Preload(p, args)
+		tx.Preload(p, args...)
 	}
 	return tx
 }
