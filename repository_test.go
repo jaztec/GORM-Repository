@@ -3,11 +3,41 @@ package repository_test
 import (
 	"context"
 	repository "github.com/jaztec/gorm-repository"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"reflect"
 	"testing"
 	"time"
 )
+
+type testDb struct{}
+
+func (db testDb) DB(context.Context) repository.Database                { return db }
+func (db testDb) Preload(query string, args ...any) repository.Database { return db }
+func (db testDb) Where(query string, args ...any) repository.Database   { return db }
+func (db testDb) Joins(query string, args ...any) repository.Database   { return db }
+func (db testDb) Limit(limit int) repository.Database                   { return db }
+func (db testDb) Offset(offset int) repository.Database                 { return db }
+func (db testDb) Order(value any) repository.Database                   { return db }
+func (db testDb) Create(value any) error {
+	reflect.ValueOf(value).Elem().FieldByName("ID").Set(reflect.ValueOf("random"))
+	return nil
+}
+func (db testDb) Find(dest any, conds ...any) error {
+	t := time.Now()
+	v := reflect.ValueOf(dest).Elem()
+	v.Set(reflect.Append(v, reflect.ValueOf(testModel{
+		Model: repository.Model{
+			ID:        "random",
+			CreatedAt: t,
+			UpdatedAt: t,
+			DeletedAt: nil,
+		},
+		Name: "Test",
+	})))
+	return nil
+}
+func (db testDb) First(dest any, conds ...any) error { return nil }
+func (db testDb) Save(value any) error               { return nil }
+func (db testDb) AutoMigrate(dst ...any) error       { return nil }
 
 type testModel struct {
 	repository.Model
@@ -16,7 +46,7 @@ type testModel struct {
 }
 
 func TestCRUDCommands(t *testing.T) {
-	db := getDb(t)
+	db := getDb()
 	r, err := repository.NewRepository[testModel](db)
 	if err != nil {
 		t.Fatalf("Error creating DB: %v", err)
@@ -88,17 +118,6 @@ func testModelParts(t *testing.T, m testModel, withDeleted bool) {
 	}
 }
 
-func getDb(t *testing.T) *gorm.DB {
-	db := postgres.Open("postgres://test:test@localhost:5432")
-	gdb, err := gorm.Open(db, &gorm.Config{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var m testModel
-	if err := gdb.Migrator().AutoMigrate(&m); err != nil {
-		t.Fatal(err)
-	}
-
-	return gdb
+func getDb() repository.Database {
+	return testDb{}
 }
