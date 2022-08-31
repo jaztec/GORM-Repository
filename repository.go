@@ -2,11 +2,10 @@ package repository
 
 import (
 	"context"
-	"gorm.io/gorm"
 )
 
 type DBProvider interface {
-	DB(ctx context.Context) *gorm.DB
+	DB(ctx context.Context) Database
 }
 
 type Migrator interface {
@@ -14,33 +13,33 @@ type Migrator interface {
 }
 
 type Repository[T Interface] struct {
-	db       *gorm.DB
+	db       Database
 	preloads map[string][]any
 }
 
 func (r *Repository[T]) GetByID(ctx context.Context, id string) (T, error) {
 	var e T
-	tx := r.addPreloads(r.DB(ctx)).
+	err := r.addPreloads(r.DB(ctx)).
 		Where("id = ?", id).
 		First(&e)
-	return e, tx.Error
+	return e, err
 }
 
 func (r *Repository[T]) FindAll(ctx context.Context) ([]T, error) {
 	var e []T
-	tr := r.addPreloads(r.DB(ctx)).
+	err := r.addPreloads(r.DB(ctx)).
 		Find(&e)
-	return e, tr.Error
+	return e, err
 }
 
 func (r *Repository[T]) Create(ctx context.Context, e *T) (*T, error) {
-	tr := r.db.WithContext(ctx).Create(e)
-	return e, tr.Error
+	err := r.db.DB(ctx).Create(e)
+	return e, err
 }
 
 func (r *Repository[T]) Update(ctx context.Context, e *T) (*T, error) {
-	tr := r.DB(ctx).Save(e)
-	return e, tr.Error
+	err := r.DB(ctx).Save(e)
+	return e, err
 }
 
 func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditions ...Condition) ([]T, error) {
@@ -61,9 +60,8 @@ func (r *Repository[T]) FindBy(ctx context.Context, after, pageSize int, conditi
 		}
 	}
 
-	tx.Find(&ts)
-
-	if err := tx.Error; err != nil {
+	err := tx.Find(&ts)
+	if err != nil {
 		return nil, err
 	}
 
@@ -75,8 +73,8 @@ func (r *Repository[T]) Model() []Interface {
 	return []Interface{e}
 }
 
-func (r *Repository[T]) DB(ctx context.Context) *gorm.DB {
-	return r.db.WithContext(ctx)
+func (r *Repository[T]) DB(ctx context.Context) Database {
+	return r.db.DB(ctx)
 }
 
 func (r *Repository[T]) AddPreload(preload string, args []any) *Repository[T] {
@@ -94,23 +92,23 @@ func (r *Repository[T]) ClearPreloads() *Repository[T] {
 	return r
 }
 
-func (r *Repository[T]) addPreloads(tx *gorm.DB) *gorm.DB {
+func (r *Repository[T]) addPreloads(tx Database) Database {
 	for p, args := range r.preloads {
 		tx.Preload(p, args...)
 	}
 	return tx
 }
 
-func NewRepository[T Interface](db *gorm.DB) (Repository[T], error) {
+func NewRepository[T Interface](db Database) (Repository[T], error) {
 	return Repository[T]{db: db}, nil
 }
 
 type MigrateUtil struct {
-	db     *gorm.DB
+	db     Database
 	models []any
 }
 
-func NewMigrateUtil(db *gorm.DB, models []Interface) Migrator {
+func NewMigrateUtil(db Database, models []Interface) Migrator {
 	m := make([]any, 0, len(models))
 	for _, i := range models {
 		m = append(m, i)
@@ -122,5 +120,5 @@ func NewMigrateUtil(db *gorm.DB, models []Interface) Migrator {
 }
 
 func (e *MigrateUtil) Migrate(ctx context.Context) error {
-	return e.db.WithContext(ctx).AutoMigrate(e.models...)
+	return e.db.DB(ctx).AutoMigrate(e.models...)
 }
