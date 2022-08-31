@@ -17,7 +17,7 @@ type testModel struct {
 
 func TestCRUDCommands(t *testing.T) {
 	db := getDb(t)
-	r, err := repository.NewRepository[testModel](db)
+	r, err := repository.NewRepository[testModel](repository.NewGORMDatabase(db))
 	if err != nil {
 		t.Fatalf("Error creating DB: %v", err)
 	}
