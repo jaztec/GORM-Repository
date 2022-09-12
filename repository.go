@@ -94,7 +94,7 @@ func (r *Repository[T]) ClearPreloads() *Repository[T] {
 
 func (r *Repository[T]) addPreloads(tx Database) Database {
 	for p, args := range r.preloads {
-		tx.Preload(p, args...)
+		tx = tx.Preload(p, args...)
 	}
 	return tx
 }
