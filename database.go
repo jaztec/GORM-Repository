@@ -13,6 +13,7 @@ type Database interface {
 	Limit(limit int) Database
 	Offset(offset int) Database
 	Order(value any) Database
+	Delete(value any, conds ...any) Database
 
 	Create(value any) error
 	Find(dest any, conds ...any) error
@@ -52,6 +53,10 @@ func (impl *gormDBImpl) Offset(offset int) Database {
 
 func (impl *gormDBImpl) Order(value any) Database {
 	return impl.wrap(impl.db.Order(value))
+}
+
+func (impl *gormDBImpl) Delete(value any, conds ...any) Database {
+	return impl.wrap(impl.db.Delete(value, conds...))
 }
 
 func (impl *gormDBImpl) Create(value any) error {
