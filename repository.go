@@ -17,7 +17,7 @@ type Repository[T Interface] struct {
 	preloads map[string][]any
 }
 
-func (r *Repository[T]) GetByID(ctx context.Context, id string) (T, error) {
+func (r *Repository[T]) FindByID(ctx context.Context, id any) (T, error) {
 	var e T
 	err := r.addPreloads(r.DB(ctx)).
 		Where("id = ?", id).
@@ -100,7 +100,9 @@ func (r *Repository[T]) addPreloads(tx Database) Database {
 }
 
 func NewRepository[T Interface](db Database) (Repository[T], error) {
-	return Repository[T]{db: db}, nil
+	return Repository[T]{
+		db: db,
+	}, nil
 }
 
 type MigrateUtil struct {

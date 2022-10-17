@@ -5,9 +5,25 @@ import (
 	repository "github.com/jaztec/gorm-repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"strconv"
 	"testing"
 	"time"
 )
+
+type testMasterModel struct {
+	repository.Model
+
+	Name    string
+	Details []testDetailModel `gorm:"foreignKey:MasterID;references:ID"`
+}
+
+type testDetailModel struct {
+	repository.Model
+
+	Name     string
+	MasterID *int
+	Master   *testMasterModel `gorm:"foreignKey:MasterID"`
+}
 
 type testModel struct {
 	repository.Model
@@ -65,6 +81,49 @@ func TestCRUDCommands(t *testing.T) {
 	})
 }
 
+func TestRelationDatabaseCommands(t *testing.T) {
+	db := getDb(t)
+	r, err := repository.NewRepository[testMasterModel](repository.NewGORMDatabase(db))
+	if err != nil {
+		t.Fatalf("Error creating DB: %v", err)
+	}
+
+	t.Run("Make sure preloads are executed", func(t *testing.T) {
+		m := testMasterModel{Name: "master"}
+		_, _ = r.Create(context.Background(), &m)
+		for i := 1; i < 4; i++ {
+			db.Create(&testDetailModel{
+				Name:   "detail " + strconv.Itoa(i),
+				Master: &m,
+			})
+		}
+
+		r.AddPreload("Details", nil)
+
+		q, err := r.FindBy(context.Background(), 0, 1, repository.NewWhereCondition("ID = ?", m.ID))
+		if err != nil {
+			t.Fatalf("Error fetching master record: %v", err)
+		}
+
+		if len(q) != 1 {
+			t.Errorf("Expect exactly 1 result, got: %d", len(q))
+			return
+		}
+
+		q1 := q[0]
+		if q1.Details == nil {
+			t.Error("Details should have been preloaded")
+			return
+		}
+
+		if len(q1.Details) != 3 {
+			t.Errorf("Expect exactly 3 results, got: %d", len(q1.Details))
+		}
+
+		r.ClearPreloads()
+	})
+}
+
 func testModelParts(t *testing.T, m testModel, withDeleted bool) {
 	if m.GetID() == "" {
 		t.Errorf("No ID was filled")
@@ -96,7 +155,9 @@ func getDb(t *testing.T) *gorm.DB {
 	}
 
 	var m testModel
-	if err := gdb.Migrator().AutoMigrate(&m); err != nil {
+	var tm testMasterModel
+	var td testDetailModel
+	if err := gdb.Migrator().AutoMigrate(&m, &tm, &td); err != nil {
 		t.Fatal(err)
 	}
 
