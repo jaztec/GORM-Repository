@@ -3,7 +3,7 @@ package repository_test
 import (
 	"context"
 	repository "github.com/jaztec/gorm-repository"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"testing"
 	"time"
@@ -89,7 +89,7 @@ func testModelParts(t *testing.T, m testModel, withDeleted bool) {
 }
 
 func getDb(t *testing.T) *gorm.DB {
-	db := postgres.Open("postgres://test:test@localhost:5432")
+	db := sqlite.Open("gorm-test.db")
 	gdb, err := gorm.Open(db, &gorm.Config{})
 	if err != nil {
 		t.Fatal(err)

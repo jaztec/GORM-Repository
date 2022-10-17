@@ -1,3 +1,4 @@
 vendor/
 artifacts/
 .idea/
+gorm-test.db
